@@ -2,9 +2,18 @@ package main
 
 import (
 	"fmt"
-	"rsc.io/quote"
 )
 
+type Blockchain struct {
+	blocks []*Block
+}
+
+type Block struct {
+	hash     []byte
+	data     []byte
+	prevHash []byte
+}
+
 func main() {
-	fmt.Println(quote.Hello())
+	fmt.Println("Hello, World.")
 }
