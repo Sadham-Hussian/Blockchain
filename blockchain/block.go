@@ -15,11 +15,11 @@ type Block struct {
 
 // CreateBlock : method to create a new block
 func CreateBlock(data string, PrevHash []byte) *Block {
-	block := &Block{[]byte{}, []byte(data), PrevHash}
+	block := &Block{[]byte{}, []byte(data), PrevHash, 0}
 	pow := NewProof(block)
-	nonce, hash = pow.Run()
+	nonce, hash := pow.Run()
 	block.Nonce = nonce
-	block.Hash = hash
+	block.Hash = hash[:]
 	return block
 }
 

@@ -2,8 +2,11 @@ package blockchain
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
+	"fmt"
 	"log"
+	"math"
 	"math/big"
 )
 
@@ -26,8 +29,45 @@ func NewProof(b *Block) *ProofOfWork {
 	return pow
 }
 
-func (p *ProofOfWork) Run() (int, []byte) {
+// FindDataToHash : Hash of the block in a blockchain includes Data of the block,
+// previous block's hash, nonce and difficulty. This function returns all these data
+// appended in the form of []byte
+func (pow *ProofOfWork) FindDataToHash(nonce int) []byte {
+	data := bytes.Join(
+		[][]byte{
+			pow.Block.Data,
+			pow.Block.PrevHash,
+			ToHex(int64(nonce)),
+			ToHex(int64(Difficulty)),
+		},
+		[]byte{},
+	)
+	return data
+}
 
+// Run : returns nonce and hash of the block after computing nonce to the required target
+func (pow *ProofOfWork) Run() (int, []byte) {
+	var intHash big.Int
+	var hash [32]byte
+
+	nonce := 0
+
+	for nonce < math.MaxInt64 {
+		data := pow.FindDataToHash(nonce)
+		hash = sha256.Sum256(data)
+
+		fmt.Printf("\r%x", hash)
+		intHash.SetBytes(hash[:])
+
+		if intHash.Cmp(pow.Target) == -1 {
+			break
+		} else {
+			nonce++
+		}
+	}
+	fmt.Println()
+
+	return nonce, hash[:]
 }
 
 // ToHex : method to encode the nonce and difficulty

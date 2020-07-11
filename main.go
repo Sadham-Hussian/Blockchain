@@ -17,4 +17,5 @@ func main() {
 		fmt.Printf("\nBlock Hash : %x", blocks.Hash)
 		fmt.Printf("\nPrev Block Hash : %x", blocks.PrevHash)
 	}
+	fmt.Println()
 }
