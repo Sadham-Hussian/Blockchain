@@ -1,6 +1,11 @@
 package blockchain
 
-import "math/big"
+import (
+	"bytes"
+	"encoding/binary"
+	"log"
+	"math/big"
+)
 
 // Difficulty : measure of how difficult it is to find the hash within the target
 const Difficulty = 16
@@ -19,4 +24,18 @@ func NewProof(b *Block) *ProofOfWork {
 	pow := &ProofOfWork{b, target}
 
 	return pow
+}
+
+func (p *ProofOfWork) Run() (int, []byte) {
+
+}
+
+// ToHex : method to encode the nonce and difficulty
+func ToHex(num int64) []byte {
+	buff := new(bytes.Buffer)
+	err := binary.Write(buff, binary.BigEndian, num)
+	if err != nil {
+		log.Panic(err)
+	}
+	return buff.Bytes()
 }
