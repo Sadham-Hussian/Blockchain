@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/Sadham-Hussian/Blockchain/blockchain"
 )
@@ -16,6 +17,9 @@ func main() {
 		fmt.Printf("\n\nBlock data : %s", blocks.Data)
 		fmt.Printf("\nBlock Hash : %x", blocks.Hash)
 		fmt.Printf("\nPrev Block Hash : %x", blocks.PrevHash)
+
+		pow := blockchain.NewProof(blocks)
+		fmt.Printf("\nPoW: %s\n", strconv.FormatBool(pow.Validate()))
 	}
 	fmt.Println()
 }

@@ -70,6 +70,19 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 	return nonce, hash[:]
 }
 
+// Validate : method to validate the hash of the block
+func (pow *ProofOfWork) Validate() bool {
+	var intHash big.Int
+	var hash [32]byte
+
+	data := pow.FindDataToHash(pow.Block.Nonce)
+	hash = sha256.Sum256(data)
+
+	intHash.SetBytes(hash[:])
+
+	return intHash.Cmp(pow.Target) == -1
+}
+
 // ToHex : method to encode the nonce and difficulty
 func ToHex(num int64) []byte {
 	buff := new(bytes.Buffer)
