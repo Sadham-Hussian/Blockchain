@@ -1,10 +1,5 @@
 package blockchain
 
-// Blockchain : struct to maintain the main chain of the block chain
-type Blockchain struct {
-	Blocks []*Block
-}
-
 // Block : struct to define a block
 type Block struct {
 	Hash     []byte // Hash of the block
@@ -23,20 +18,8 @@ func CreateBlock(data string, PrevHash []byte) *Block {
 	return block
 }
 
-// AddBlock : method to add new block to the chain
-func (chain *Blockchain) AddBlock(data string) {
-	prevBlock := chain.Blocks[len(chain.Blocks)-1]
-	newBlock := CreateBlock(data, prevBlock.Hash)
-	chain.Blocks = append(chain.Blocks, newBlock)
-}
-
 // Genesis : method to create the genesis block.
 // genesis block does not have PrevHash
 func Genesis() *Block {
 	return CreateBlock("genesis", []byte{})
-}
-
-// InitBlockchain : method to create a Blockchain
-func InitBlockchain() *Blockchain {
-	return &Blockchain{[]*Block{Genesis()}}
 }
