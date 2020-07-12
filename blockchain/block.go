@@ -3,6 +3,7 @@ package blockchain
 import (
 	"bytes"
 	"encoding/gob"
+	"log"
 )
 
 // Block : struct to define a block
@@ -37,6 +38,8 @@ func (b *Block) Serialize() []byte {
 
 	err := encoder.Encode(b)
 
+	Handle(err)
+
 	return res.Bytes()
 }
 
@@ -48,5 +51,14 @@ func Deserialize(data []byte) *Block {
 
 	err := decoder.Decode(&block)
 
+	Handle(err)
+
 	return &block
+}
+
+// Handle : method to handle errors
+func Handle(err error) {
+	if err != nil {
+		log.Panic(err)
+	}
 }
