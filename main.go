@@ -7,6 +7,11 @@ import (
 	"github.com/Sadham-Hussian/Blockchain/blockchain"
 )
 
+// CommandLine : Struct to interact with the user
+type CommandLine struct {
+	blockchain *blockchain.Blockchain
+}
+
 func main() {
 	chain := blockchain.InitBlockchain()
 
