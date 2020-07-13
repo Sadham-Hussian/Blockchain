@@ -16,6 +16,13 @@ type Blockchain struct {
 	Database *badger.DB
 }
 
+// BlockchainIterator : struct to get the blockchain and blocks from the
+// BadgerDB
+type BlockchainIterator struct {
+	CurrentHash []byte
+	Database    *badger.DB
+}
+
 // InitBlockchain : method to create a Blockchain
 func InitBlockchain() *Blockchain {
 	var lastHash []byte
