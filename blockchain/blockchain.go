@@ -27,7 +27,11 @@ type BlockchainIterator struct {
 func InitBlockchain() *Blockchain {
 	var lastHash []byte
 
-	db, err := badger.Open(badger.DefaultOptions("/temp/blocks"))
+	opts := badger.DefaultOptions(dbPath)
+	opts.Dir = dbPath
+	opts.ValueDir = dbPath
+	// db, err := badger.Open(badger.DefaultOptions("/temp/badger"))
+	db, err := badger.Open(opts)
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
@@ -93,8 +97,8 @@ func (chain *Blockchain) AddBlock(data string) {
 }
 
 // Iterator : It returns the current Blockchain
-func (chain *BlockchainIterator) Iterator() *BlockchainIterator {
-	iter := &BlockchainIterator{chain.CurrentHash, chain.Database}
+func (chain *Blockchain) Iterator() *BlockchainIterator {
+	iter := &BlockchainIterator{chain.LastHash, chain.Database}
 
 	return iter
 }
