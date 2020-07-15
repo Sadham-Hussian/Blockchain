@@ -54,3 +54,20 @@ func CoinbaseTx(to string, data string) *Transaction {
 
 	return &tx
 }
+
+// IsCoinbase : function to check if the transaction is Coinbase transaction
+func (tx *Transaction) IsCoinbase() bool {
+	return len(tx.Inputs) == 1 && len(tx.Inputs[0].ID) == 0 && tx.Inputs[0].Out == -1
+}
+
+// InputCanBeUnlock : function to check if the input of the transaction
+// comes from the correct owner
+func (in *TxInput) InputCanBeUnlock(data string) bool {
+	return in.Sig == data
+}
+
+// OutputCanBeUnlocked : function to check whether the reciever can retrieve
+// the transaction
+func (out *TxOutput) OutputCanBeUnlocked(key string) bool {
+	return out.PubKey == key
+}
