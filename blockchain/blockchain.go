@@ -239,7 +239,7 @@ Work:
 		for outIndex, out := range tx.Outputs {
 			if out.OutputCanBeUnlocked(address) && accumulated < amount {
 				accumulated += out.Value
-				unspentOuts = append(unspentOuts, outIndex)
+				unspentOuts[txID] = append(unspentOuts[txID], outIndex)
 
 				if accumulated > amount {
 					break Work
