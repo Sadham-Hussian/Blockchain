@@ -109,7 +109,7 @@ func InitBlockchain(address string) *Blockchain {
 }
 
 // AddBlock : method to add new block to the chain
-func (chain *Blockchain) AddBlock(data string) {
+func (chain *Blockchain) AddBlock(transactions []*Transaction) {
 	var lastHash []byte
 
 	err := chain.Database.View(func(txn *badger.Txn) error {
@@ -123,7 +123,7 @@ func (chain *Blockchain) AddBlock(data string) {
 	})
 	Handle(err)
 
-	newBlock := CreateBlock(data, lastHash)
+	newBlock := CreateBlock(transactions, lastHash)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
 		err := txn.Set(newBlock.Hash, newBlock.Serialize())
@@ -223,4 +223,29 @@ func (chain *Blockchain) FindUTXO(address string) []TxOutput {
 		}
 	}
 	return UTXOs
+}
+
+// FindSpendableOutputs : function to find the outputs that a address can spend
+// in another transaction
+func (chain *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+	unspentOuts := make(map[string][]int)
+	unspentTxs := chain.FindUnSpentTransaction(address)
+	accumulated := 0
+
+	Work:
+		for _, tx := range unspentTxs {
+			txID := hex.EncodeToString(tx.ID)
+
+			for outIndex, out := range tx.Outputs {
+				if out.OutputCanBeUnlocked(address) && accumulated < amount {
+					accumulated += out.Value
+					unspentOuts = append(unspentOuts, outIndex)
+
+					if accumulated > amount {
+						break Work
+					}
+				}
+			}
+		}
+	return accumulated, unspentOuts
 }
