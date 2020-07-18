@@ -39,7 +39,7 @@ func DBexists() bool {
 
 // ContinueBlockchain : method to retrieve the blockchain from the database
 func ContinueBlockchain(address string) *Blockchain {
-	if DBexists() {
+	if DBexists() == false {
 		fmt.Println("Blockchain do not exists")
 		runtime.Goexit()
 	}
@@ -73,7 +73,7 @@ func ContinueBlockchain(address string) *Blockchain {
 // InitBlockchain : method to create a Blockchain
 func InitBlockchain(address string) *Blockchain {
 
-	if DBexists() {
+	if DBexists() == false {
 		fmt.Println("Blockchain already exists")
 		runtime.Goexit()
 	}
