@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"runtime"
@@ -161,4 +162,65 @@ func (iter *BlockchainIterator) Next() *Block {
 	iter.CurrentHash = block.PrevHash
 
 	return block
+}
+
+// FindUnSpentTransaction : function to find the upspent transaction of
+// the given address
+func (chain *Blockchain) FindUnSpentTransaction(address string) []Transaction {
+	var unSpentTxs []Transaction
+
+	spentTXOs := make(map[string][]int)
+
+	iter := chain.Iterator()
+
+	for {
+		block := iter.Next()
+
+		for _, tx := range block.Transactions {
+			txID := hex.EncodeToString(tx.ID)
+
+		Outputs:
+			for outIndex, out := range tx.Outputs {
+				if spentTXOs[txID] != nil {
+					for _, spentOut := range spentTXOs[txID] {
+						if spentOut == outIndex {
+							continue Outputs
+						}
+					}
+				}
+				if out.OutputCanBeUnlocked(address) {
+					unSpentTxs = append(unSpentTxs, *tx)
+				}
+			}
+
+			if tx.IsCoinbase() == false {
+				for _, input := range tx.Inputs {
+					if input.InputCanBeUnlock(address) {
+						inTxID := hex.EncodeToString(input.ID)
+						spentTXOs[inTxID] = append(spentTXOs[inTxID], input.Out)
+					}
+				}
+			}
+		}
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+	return unSpentTxs
+}
+
+// FindUTXO : function to spend unspent transaction output that can be spent 
+// by the holder
+func (chain *Blockchain) FindUTXO(address string) []TxOutput {
+	var UTXOs []TxOutput
+	unspentTransactions := chain.FindUnSpentTransaction(address)
+
+	for _, tx := range unspentTransactions {
+		for _, out := tx.Outputs {
+			if out.OutputCanBeUnlocked(address) {
+				UTXOs = append(UTXOs, out)
+			}
+		}
+	}
+	return UTXOs
 }
