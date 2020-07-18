@@ -209,14 +209,14 @@ func (chain *Blockchain) FindUnSpentTransaction(address string) []Transaction {
 	return unSpentTxs
 }
 
-// FindUTXO : function to spend unspent transaction output that can be spent 
+// FindUTXO : function to spend unspent transaction output that can be spent
 // by the holder
 func (chain *Blockchain) FindUTXO(address string) []TxOutput {
 	var UTXOs []TxOutput
 	unspentTransactions := chain.FindUnSpentTransaction(address)
 
 	for _, tx := range unspentTransactions {
-		for _, out := tx.Outputs {
+		for _, out := range tx.Outputs {
 			if out.OutputCanBeUnlocked(address) {
 				UTXOs = append(UTXOs, out)
 			}
@@ -232,20 +232,20 @@ func (chain *Blockchain) FindSpendableOutputs(address string, amount int) (int, 
 	unspentTxs := chain.FindUnSpentTransaction(address)
 	accumulated := 0
 
-	Work:
-		for _, tx := range unspentTxs {
-			txID := hex.EncodeToString(tx.ID)
+Work:
+	for _, tx := range unspentTxs {
+		txID := hex.EncodeToString(tx.ID)
 
-			for outIndex, out := range tx.Outputs {
-				if out.OutputCanBeUnlocked(address) && accumulated < amount {
-					accumulated += out.Value
-					unspentOuts = append(unspentOuts, outIndex)
+		for outIndex, out := range tx.Outputs {
+			if out.OutputCanBeUnlocked(address) && accumulated < amount {
+				accumulated += out.Value
+				unspentOuts = append(unspentOuts, outIndex)
 
-					if accumulated > amount {
-						break Work
-					}
+				if accumulated > amount {
+					break Work
 				}
 			}
 		}
+	}
 	return accumulated, unspentOuts
 }
