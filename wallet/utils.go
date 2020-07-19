@@ -6,7 +6,7 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-// Base58Encode encodes the input data
+// Base58Encode encodes the input data to return a address
 func Base58Encode(input []byte) []byte {
 	encode := base58.Encode(input)
 
