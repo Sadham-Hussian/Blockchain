@@ -2,6 +2,8 @@ package blockchain
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
@@ -14,6 +16,31 @@ type Transaction struct {
 	ID      []byte
 	Inputs  []TxInput
 	Outputs []TxOutput
+}
+
+// Hash hashes the transaction and returns the hash in bytes
+func (tx *Transaction) Hash() []byte {
+	var hash [32]byte
+
+	txCopy := *tx
+	txCopy.ID = []byte{}
+
+	hash = sha256.Sum256(txCopy.Serialize())
+
+	return hash[:]
+}
+
+// Serialize serailizes transaction into bytes
+func (tx Transaction) Serialize() []byte {
+	var encoded bytes.Buffer
+
+	enc := gob.NewEncoder(&encoded)
+	err := enc.Encode(tx)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return encoded.Bytes()
 }
 
 // SetID : function to set the transaction ID
@@ -80,4 +107,33 @@ func NewTransaction(from, to string, amount int, chain *Blockchain) *Transaction
 // IsCoinbase : function to check if the transaction is Coinbase transaction
 func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Inputs) == 1 && len(tx.Inputs[0].ID) == 0 && tx.Inputs[0].Out == -1
+}
+
+// Sign signs a transaction with the given private key
+func (tx *Transaction) Sign(privateKey ecdsa.PrivateKey, prevTXs map[string]Transaction) {
+	if tx.IsCoinbase() {
+		return
+	}
+
+	for _, in := range tx.Inputs {
+		if prevTXs[hex.EncodeToString(in.ID)].ID == nil {
+			log.Panic("ERROR: Previous transaction is not correct")
+		}
+	}
+
+	txCopy := tx.TrimmedCopy()
+
+	for inID, in := range txCopy.Inputs {
+		prevTX := prevTXs[hex.EncodeToString(in.ID)]
+		txCopy.Inputs[inID].Signature = nil
+		txCopy.Inputs[inID].PubKey = prevTx.Outputs[in.Out].PubKeyHash
+		txCopy.ID = txCopy.Hash()
+		txCopy.Inputs[inID].PubKey = nil
+
+		r, s, err := ecdsa.Sign(rand.Reader, &privateKey, txCopy.ID)
+		Handle(err)
+		signature := append(r.Bytes(), s.Bytes()...)
+
+		tx.Inputs[inID].Signature = signature
+	}
 }
