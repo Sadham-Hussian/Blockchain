@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strings"
 )
 
 // Transaction : struct to handle details of a transaction
@@ -202,4 +203,26 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	}
 
 	return true
+}
+
+// String function formats to print details of a transaction
+func (tx Transaction) String() string {
+	var lines []string
+
+	lines = append(lines, fmt.Sprintf("--- Transaction %x: ", tx.ID))
+	for i, input := range tx.Inputs {
+		lines = append(lines, fmt.Sprintf("    Input %d: ", i))
+		lines = append(lines, fmt.Sprintf("    TxID:      %x", input.ID))
+		lines = append(lines, fmt.Sprintf("    Out :      %d", input.Out))
+		lines = append(lines, fmt.Sprintf("    Signature: %x", input.Signature))
+		lines = append(lines, fmt.Sprintf("    PubKey:    %x", input.PubKey))
+	}
+
+	for i, output := range tx.Outputs {
+		lines = append(lines, fmt.Sprintf("    Output %d:", i))
+		lines = append(lines, fmt.Sprintf("    Value: %d", output.Value))
+		lines = append(lines, fmt.Sprintf("    PubKeyHash: %x", output.PubKeyHash))
+	}
+
+	return strings.Join(lines, "\n")
 }
