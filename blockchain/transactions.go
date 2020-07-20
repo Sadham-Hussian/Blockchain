@@ -137,3 +137,22 @@ func (tx *Transaction) Sign(privateKey ecdsa.PrivateKey, prevTXs map[string]Tran
 		tx.Inputs[inID].Signature = signature
 	}
 }
+
+// TrimmedCopy copies the transaction to sign the transaction with empty signature
+// and PubKey
+func (tx *Transaction) TrimmedCopy() Transaction {
+	var inputs []TxInput
+	var outputs []TxOutput
+
+	for _, in := range tx.Inputs {
+		inputs = append(inputs, TxInput{in.ID, in.Out, nil, nil})
+	}
+
+	for _, out := range tx.Outputs {
+		outputs = append(outputs, TxOutput{out.Value, out.PubKeyHash})
+	}
+
+	txCopy := Transaction{tx.ID, inputs, outputs}
+
+	return txCopy
+}
