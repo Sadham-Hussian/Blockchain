@@ -12,6 +12,8 @@ import (
 	"log"
 	"math/big"
 	"strings"
+
+	"github.com/Sadham-Hussian/Blockchain/wallet"
 )
 
 // Transaction : struct to handle details of a transaction
@@ -60,15 +62,15 @@ func (tx *Transaction) SetID() {
 }
 
 // CoinbaseTx : firsttx in the block. Miner collects the block reward.
-func CoinbaseTx(to string, data string) *Transaction {
+func CoinbaseTx(to, data string) *Transaction {
 	if data == "" {
 		data = fmt.Sprintf("Coins to %s", to)
 	}
 
-	txin := TxInput{[]byte{}, -1, data}
-	txout := TxOutput{100, to}
+	txin := TxInput{[]byte{}, -1, nil, []byte(data)}
+	txout := NewTxOutput(100, to)
 
-	tx := Transaction{nil, []TxInput{txin}, []TxOutput{txout}}
+	tx := Transaction{nil, []TxInput{txin}, []TxOutput{*txout}}
 	tx.SetID()
 
 	return &tx
@@ -79,7 +81,12 @@ func NewTransaction(from, to string, amount int, chain *Blockchain) *Transaction
 	var inputs []TxInput
 	var outputs []TxOutput
 
-	accumulatedAmount, validOutputs := chain.FindSpendableOutputs(from, amount)
+	wallets, err := wallet.CreateWallets()
+	Handle(err)
+	w := wallets.GetWallet(from)
+	pubKeyHash := wallet.PublicKeyHash(w.PublicKey)
+
+	accumulatedAmount, validOutputs := chain.FindSpendableOutputs(pubKeyHash, amount)
 
 	if accumulatedAmount < amount {
 		log.Panic("Error: not enough funds")
@@ -90,19 +97,20 @@ func NewTransaction(from, to string, amount int, chain *Blockchain) *Transaction
 		Handle(err)
 
 		for _, out := range outs {
-			input := TxInput{txID, out, from}
+			input := TxInput{txID, out, nil, w.PublicKey}
 			inputs = append(inputs, input)
 		}
 	}
 
-	outputs = append(outputs, TxOutput{amount, to})
+	outputs = append(outputs, *NewTxOutput(amount, to))
 
 	if accumulatedAmount > amount {
-		outputs = append(outputs, TxOutput{accumulatedAmount - amount, from})
+		outputs = append(outputs, *NewTxOutput(accumulatedAmount-amount, from))
 	}
 
 	tx := Transaction{nil, inputs, outputs}
-	tx.SetID()
+	tx.ID = tx.Hash()
+	chain.SignTransaction(&tx, w.PrivateKey)
 
 	return &tx
 }
@@ -129,7 +137,7 @@ func (tx *Transaction) Sign(privateKey ecdsa.PrivateKey, prevTXs map[string]Tran
 	for inID, in := range txCopy.Inputs {
 		prevTX := prevTXs[hex.EncodeToString(in.ID)]
 		txCopy.Inputs[inID].Signature = nil
-		txCopy.Inputs[inID].PubKey = prevTx.Outputs[in.Out].PubKeyHash
+		txCopy.Inputs[inID].PubKey = prevTX.Outputs[in.Out].PubKeyHash
 		txCopy.ID = txCopy.Hash()
 		txCopy.Inputs[inID].PubKey = nil
 
