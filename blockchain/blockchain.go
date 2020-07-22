@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 
@@ -76,7 +77,7 @@ func ContinueBlockchain(address string) *Blockchain {
 // InitBlockchain : method to create a Blockchain
 func InitBlockchain(address string) *Blockchain {
 
-	if DBexists() == false {
+	if DBexists() {
 		fmt.Println("Blockchain already exists")
 		runtime.Goexit()
 	}
@@ -115,6 +116,11 @@ func InitBlockchain(address string) *Blockchain {
 func (chain *Blockchain) AddBlock(transactions []*Transaction) {
 	var lastHash []byte
 
+	for _, tx := range transactions {
+		if chain.VerifyTransaction(tx) != true {
+			log.Panic("Invalid Transaction")
+		}
+	}
 	err := chain.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)

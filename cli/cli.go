@@ -20,7 +20,7 @@ func (cli *CommandLine) printUsage() {
 	fmt.Println("Usage: ")
 	fmt.Println(" getBalance -address ADDRESS -get the balance for an address")
 	fmt.Println(" CreateBlockchain -address ADDRESS creates a blockchain and sends genesis reward to address")
-	fmt.Println(" send -from FROM -to TO -amount AMOUNT - Send amount of coins")
+	fmt.Println(" send -to TO -from FROM -amount AMOUNT - Send amount of coins")
 	fmt.Println(" print - prints the blocks in the chain")
 	fmt.Println(" createwallet - Creates a new wallet")
 	fmt.Println(" listaddresses - Lists all the addresses in our wallet file")

@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"encoding/gob"
 
 	"github.com/Sadham-Hussian/Blockchain/wallet"
 )
@@ -12,6 +13,11 @@ type TxInput struct {
 	Out       int
 	Signature []byte
 	PubKey    []byte
+}
+
+// TxOutputs : struct to trace unspent transactions
+type TxOutputs struct {
+	Outputs []TxOutput
 }
 
 // TxOutput : struct to handle transaction output of a transaction
@@ -29,7 +35,7 @@ func (in *TxInput) UsesKey(pubKeyHash []byte) bool {
 
 // Lock converts the address to PubKeyHash to lock the output transaction
 func (out *TxOutput) Lock(address []byte) {
-	pubKeyHash := wallet.PublicKeyHash(address)
+	pubKeyHash := wallet.Base58Decode(address)
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
 	out.PubKeyHash = pubKeyHash
 }
@@ -46,4 +52,26 @@ func NewTxOutput(value int, address string) *TxOutput {
 	txo.Lock([]byte(address))
 
 	return txo
+}
+
+// Serialize serializes TxOutputs to []byte
+func (outs TxOutputs) Serialize() []byte {
+	var buffer bytes.Buffer
+
+	encode := gob.NewEncoder(&buffer)
+	err := encode.Encode(outs)
+	Handle(err)
+
+	return buffer.Bytes()
+}
+
+// DeserializeOutputs deserializes TxOutputs in byte to TxOutputs
+func DeserializeOutputs(data []byte) TxOutputs {
+	var outputs TxOutputs
+
+	decode := gob.NewDecoder(bytes.NewReader(data))
+	err := decode.Decode(&outputs)
+	Handle(err)
+
+	return outputs
 }
