@@ -173,10 +173,10 @@ func (iter *BlockchainIterator) Next() *Block {
 	return block
 }
 
-// FindUnSpentTransaction : function to find the upspent transaction of
-// the given address
-func (chain *Blockchain) FindUnSpentTransaction(pubKeyHash []byte) []Transaction {
-	var unSpentTxs []Transaction
+// FindUTXO iterates through all the transactions and finds only the unspent
+// transaction
+func (chain *Blockchain) FindUTXO() map[string]TxOutputs {
+	UTXO := make(map[string]TxOutputs)
 
 	spentTXOs := make(map[string][]int)
 
@@ -197,17 +197,15 @@ func (chain *Blockchain) FindUnSpentTransaction(pubKeyHash []byte) []Transaction
 						}
 					}
 				}
-				if out.IsLockedWithKey(pubKeyHash) {
-					unSpentTxs = append(unSpentTxs, *tx)
-				}
+				outs := UTXO[txID]
+				outs.Outputs = append(outs.Outputs, out)
+				UTXO[txID] = outs
 			}
 
 			if tx.IsCoinbase() == false {
 				for _, input := range tx.Inputs {
-					if input.UsesKey(pubKeyHash) {
-						inTxID := hex.EncodeToString(input.ID)
-						spentTXOs[inTxID] = append(spentTXOs[inTxID], input.Out)
-					}
+					inTxID := hex.EncodeToString(input.ID)
+					spentTXOs[inTxID] = append(spentTXOs[inTxID], input.Out)
 				}
 			}
 		}
@@ -215,7 +213,7 @@ func (chain *Blockchain) FindUnSpentTransaction(pubKeyHash []byte) []Transaction
 			break
 		}
 	}
-	return unSpentTxs
+	return UTXO
 }
 
 // FindUTXO : function to spend unspent transaction output that can be spent
