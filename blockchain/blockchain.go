@@ -254,6 +254,9 @@ func (chain *Blockchain) SignTransaction(tx *Transaction, privateKey ecdsa.Priva
 // VerifyTransaction checks whether the transaction is in the blockchain and
 // pass the map of transactions to be verified to Verify()
 func (chain *Blockchain) VerifyTransaction(tx *Transaction) bool {
+	if tx.IsCoinbase() == true {
+		return true
+	}
 	prevTXs := make(map[string]Transaction)
 
 	for _, in := range tx.Inputs {
