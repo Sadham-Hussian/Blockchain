@@ -113,7 +113,7 @@ func InitBlockchain(address string) *Blockchain {
 }
 
 // AddBlock : method to add new block to the chain
-func (chain *Blockchain) AddBlock(transactions []*Transaction) {
+func (chain *Blockchain) AddBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
 
 	for _, tx := range transactions {
@@ -145,6 +145,8 @@ func (chain *Blockchain) AddBlock(transactions []*Transaction) {
 	})
 
 	Handle(err)
+
+	return newBlock
 }
 
 // Iterator : It returns the current Blockchain
