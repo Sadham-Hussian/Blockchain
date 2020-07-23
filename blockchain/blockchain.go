@@ -173,11 +173,9 @@ func (iter *BlockchainIterator) Next() *Block {
 	return block
 }
 
-// FindUTXO iterates through all the transactions and finds only the unspent
-// transaction
+// FindUTXO finds the unspent transaction output
 func (chain *Blockchain) FindUTXO() map[string]TxOutputs {
 	UTXO := make(map[string]TxOutputs)
-
 	spentTXOs := make(map[string][]int)
 
 	iter := chain.Iterator()
@@ -189,10 +187,10 @@ func (chain *Blockchain) FindUTXO() map[string]TxOutputs {
 			txID := hex.EncodeToString(tx.ID)
 
 		Outputs:
-			for outIndex, out := range tx.Outputs {
+			for outIdx, out := range tx.Outputs {
 				if spentTXOs[txID] != nil {
 					for _, spentOut := range spentTXOs[txID] {
-						if spentOut == outIndex {
+						if spentOut == outIdx {
 							continue Outputs
 						}
 					}
@@ -201,60 +199,19 @@ func (chain *Blockchain) FindUTXO() map[string]TxOutputs {
 				outs.Outputs = append(outs.Outputs, out)
 				UTXO[txID] = outs
 			}
-
 			if tx.IsCoinbase() == false {
-				for _, input := range tx.Inputs {
-					inTxID := hex.EncodeToString(input.ID)
-					spentTXOs[inTxID] = append(spentTXOs[inTxID], input.Out)
+				for _, in := range tx.Inputs {
+					inTxID := hex.EncodeToString(in.ID)
+					spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Out)
 				}
 			}
 		}
+
 		if len(block.PrevHash) == 0 {
 			break
 		}
 	}
 	return UTXO
-}
-
-// FindUTXO : function to spend unspent transaction output that can be spent
-// by the holder
-func (chain *Blockchain) FindUTXO(pubKeyHash []byte) []TxOutput {
-	var UTXOs []TxOutput
-	unspentTransactions := chain.FindUnSpentTransaction(pubKeyHash)
-
-	for _, tx := range unspentTransactions {
-		for _, out := range tx.Outputs {
-			if out.IsLockedWithKey(pubKeyHash) {
-				UTXOs = append(UTXOs, out)
-			}
-		}
-	}
-	return UTXOs
-}
-
-// FindSpendableOutputs : function to find the outputs that a address can spend
-// in another transaction
-func (chain *Blockchain) FindSpendableOutputs(pubKeyHash []byte, amount int) (int, map[string][]int) {
-	unspentOuts := make(map[string][]int)
-	unspentTxs := chain.FindUnSpentTransaction(pubKeyHash)
-	accumulated := 0
-
-Work:
-	for _, tx := range unspentTxs {
-		txID := hex.EncodeToString(tx.ID)
-
-		for outIndex, out := range tx.Outputs {
-			if out.IsLockedWithKey(pubKeyHash) && accumulated < amount {
-				accumulated += out.Value
-				unspentOuts[txID] = append(unspentOuts[txID], outIndex)
-
-				if accumulated > amount {
-					break Work
-				}
-			}
-		}
-	}
-	return accumulated, unspentOuts
 }
 
 // FindTransaction finds the transaction in the blockchain
