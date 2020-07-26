@@ -2,8 +2,12 @@ package network
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	"syscall"
 
 	"github.com/Sadham-Hussian/Blockchain/blockchain"
+	"gopkg.in/vrecan/death.v3"
 )
 
 const (
@@ -78,7 +82,7 @@ func CmdToBytes(cmd string) []byte {
 
 // BytesToCmd function converts bytes to string
 func BytesToCmd(bytes []byte) string {
-	var cmd string
+	var cmd []byte
 
 	for _, b := range bytes {
 		if b != 0x0 {
@@ -87,4 +91,15 @@ func BytesToCmd(bytes []byte) string {
 	}
 
 	return fmt.Sprintf("%s", cmd)
+}
+
+// CloseDB used to close DB before terminating
+func CloseDB(chain *blockchain.Blockchain) {
+	d := death.NewDeath(syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+
+	d.WaitForDeathWithFunc(func() {
+		defer os.Exit(1)
+		defer runtime.Goexit(1)
+		chain.Database.Close()
+	})
 }
