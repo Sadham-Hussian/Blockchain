@@ -1,7 +1,10 @@
 package network
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"syscall"
@@ -74,7 +77,7 @@ func CmdToBytes(cmd string) []byte {
 	var bytes [commandLength]byte
 
 	for i, c := range cmd {
-		bytes[i] = c
+		bytes[i] = byte(c)
 	}
 
 	return bytes[:]
@@ -93,13 +96,26 @@ func BytesToCmd(bytes []byte) string {
 	return fmt.Sprintf("%s", cmd)
 }
 
+// GobEncode encodes the commands to be passed through the network
+func GobEncode(data interface{}) []byte {
+	var buff bytes.Buffer
+
+	enc := gob.NewEncoder(&buff)
+	err := enc.Encode(data)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return buff.Bytes()
+}
+
 // CloseDB used to close DB before terminating
 func CloseDB(chain *blockchain.Blockchain) {
 	d := death.NewDeath(syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 
 	d.WaitForDeathWithFunc(func() {
 		defer os.Exit(1)
-		defer runtime.Goexit(1)
+		defer runtime.Goexit()
 		chain.Database.Close()
 	})
 }
