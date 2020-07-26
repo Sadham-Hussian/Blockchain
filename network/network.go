@@ -1,6 +1,10 @@
 package network
 
-import "github.com/Sadham-Hussian/Blockchain/blockchain"
+import (
+	"fmt"
+
+	"github.com/Sadham-Hussian/Blockchain/blockchain"
+)
 
 const (
 	protocol      = "tcp"
@@ -53,9 +57,34 @@ type Tx struct {
 	Transaction []byte
 }
 
-// Version represent the version
+// Version represent the version of the blockchain version is incremented based on
+// no of blocks in the chain. BestHeight holds the height of the blockchain
 type Version struct {
 	Version    int
 	BestHeight int
 	AddrFrom   string
+}
+
+// CmdToBytes function to convert cmd in string to bytes
+func CmdToBytes(cmd string) []byte {
+	var bytes [commandLength]byte
+
+	for i, c := range cmd {
+		bytes[i] = c
+	}
+
+	return bytes[:]
+}
+
+// BytesToCmd function converts bytes to string
+func BytesToCmd(bytes []byte) string {
+	var cmd string
+
+	for _, b := range bytes {
+		if b != 0x0 {
+			cmd = append(cmd, b)
+		}
+	}
+
+	return fmt.Sprintf("%s", cmd)
 }
