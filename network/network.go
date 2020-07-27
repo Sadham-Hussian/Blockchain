@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"os"
 	"runtime"
 	"syscall"
@@ -94,6 +96,70 @@ func BytesToCmd(bytes []byte) string {
 	}
 
 	return fmt.Sprintf("%s", cmd)
+}
+
+// SendAddr sends the knownAddress of a node to another node
+func SendAddr(address string) {
+	nodes := Addr{knownNodes}
+	nodes.AddrList = append(knownNodes, nodeAddress)
+	payload := GobEncode(nodes)
+	request := append(CmdToBytes("addr"), payload...)
+
+	SendData(address, request)
+}
+
+// SendBlock sends the block from one node to another
+func SendBlock(address string, b *blockchain.Block) {
+	blockData := Block{address, b.Serialize()}
+	payload := GobEncode(blockData)
+	request := append(CmdToBytes("block"), payload...)
+
+	SendData(address, request)
+}
+
+// SendInv sends the inventory data from one node to another
+func SendInv(address, kind string, items [][]byte) {
+	inventory := Inventory{address, kind, items}
+	payload := GobEncode(inventory)
+	request := append(CmdToBytes("inv"), payload...)
+
+	SendData(address, request)
+}
+
+// SendTx sends a transaction from one node to another node
+func SendTx(address, tnx *blockchain.Transaction) {
+	data := Tx{nodeAddress, tnx.Serialize()}
+	payload := GobEncode(data)
+	request := append(CmdToBytes("tx"), payload...)
+
+	SendData(address, request)
+}
+
+// SendData sends data to a node
+func SendData(addr string, data []byte) {
+	conn, err := net.Dial(protocol, addr)
+
+	if err != nil {
+		fmt.Printf("%s is not available\n", addr)
+
+		var updateNodes []string
+
+		for _, node := range knownNodes {
+			if node != addr {
+				updateNodes = append(updateNodes, node)
+			}
+		}
+
+		knownNodes = updateNodes
+
+		return
+	}
+	defer conn.Close()
+
+	_, err = io.Copy(conn, bytes.NewReader(data))
+	if err != nil {
+		log.Panic(err)
+	}
 }
 
 // GobEncode encodes the commands to be passed through the network
