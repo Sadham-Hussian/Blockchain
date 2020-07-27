@@ -98,6 +98,29 @@ func BytesToCmd(bytes []byte) string {
 	return fmt.Sprintf("%s", cmd)
 }
 
+// RequestBlocks function request blocks from the knownNodes
+func RequestBlocks() {
+	for _, node := range knownNodes {
+		SendGetBlocks(node)
+	}
+}
+
+// SendGetBlocks function sends request to send blocks to another node
+func SendGetBlocks(address string) {
+	payload := GobEncode(GetBlocks{nodeAddress})
+	request := append(CmdToBytes("getblocks"), payload...)
+
+	SendData(address, request)
+}
+
+// SendGetData function sends request to send data to another node
+func SendGetData(address, kind string, ID []byte) {
+	payload := GobEncode(GetData{nodeAddress, kind, ID})
+	request := append(CmdToBytes("getdata"), payload...)
+
+	SendData(address, request)
+}
+
 // SendAddr sends the knownAddress of a node to another node
 func SendAddr(address string) {
 	nodes := Addr{knownNodes}
@@ -127,10 +150,20 @@ func SendInv(address, kind string, items [][]byte) {
 }
 
 // SendTx sends a transaction from one node to another node
-func SendTx(address, tnx *blockchain.Transaction) {
+func SendTx(address string, tnx *blockchain.Transaction) {
 	data := Tx{nodeAddress, tnx.Serialize()}
 	payload := GobEncode(data)
 	request := append(CmdToBytes("tx"), payload...)
+
+	SendData(address, request)
+}
+
+// SendVersion function sends the version from a node to another node
+func SendVersion(address string, chain *blockchain.Blockchain) {
+	bestHeight := chain.BestHeight()
+	version := Version{address, bestHeight, nodeAddress}
+	payload := GobEncode(version)
+	request := append(CmdToBytes("version"), payload...)
 
 	SendData(address, request)
 }
@@ -160,6 +193,71 @@ func SendData(addr string, data []byte) {
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+// HandleAddr adds the nodeAddress sent by another node into its own node
+func HandleAddr(request []byte) {
+	var buff bytes.Buffer
+	var payload Addr
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	knownNodes = append(knownNodes, payload.AddrList...)
+	fmt.Printf("There are %d known nodes\n", len(knownNodes))
+	RequestBlocks()
+}
+
+// HandleBlock functions handles the blocks received from another node
+func HandleBlock(request []byte, chain *blockchain.Blockchain) {
+	var buff bytes.Buffer
+	var payload Block
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	blockData := payload.Block
+	block := blockchain.Deserialize(blockData)
+
+	fmt.Println("Received a new block!")
+	chain.AddBlock(block)
+
+	fmt.Printf("Added block: %x\n", block.Hash)
+
+	if len(blocksInTransit) > 0 {
+		blockHash := blocksInTransit[0]
+		SendGetData(payload.AddrFrom, "block", blockHash)
+
+		blocksInTransit = blocksInTransit[1:]
+	} else {
+		UTXOSet := blockchain.UTXOSet{chain}
+		UTXOSet.Reindex()
+	}
+}
+
+// HandleGetBlocks functions handles the request from a node which is requesting
+// a block
+func HandleGetBlocks(request []byte, chain *blockchain.Blockchain) {
+	var buff bytes.Buffer
+	var payload GetBlocks
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	blocks := chain.GetBlockHashes()
+	SendInv(payload.AddrFrom, "block", blocks)
 }
 
 // GobEncode encodes the commands to be passed through the network
