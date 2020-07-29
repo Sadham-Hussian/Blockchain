@@ -25,13 +25,6 @@ type Blockchain struct {
 	Database *badger.DB
 }
 
-// BlockchainIterator : struct to get the blockchain and blocks from the
-// BadgerDB
-type BlockchainIterator struct {
-	CurrentHash []byte
-	Database    *badger.DB
-}
-
 // DBexists : function to check the status of the DB
 func DBexists() bool {
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
@@ -147,32 +140,6 @@ func (chain *Blockchain) AddBlock(transactions []*Transaction) *Block {
 	Handle(err)
 
 	return newBlock
-}
-
-// Iterator : It returns the current Blockchain
-func (chain *Blockchain) Iterator() *BlockchainIterator {
-	iter := &BlockchainIterator{chain.LastHash, chain.Database}
-
-	return iter
-}
-
-// Next : function to iterate the blockchain in BadgerDB and return a block
-func (iter *BlockchainIterator) Next() *Block {
-	var block *Block
-
-	err := iter.Database.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(iter.CurrentHash)
-		Handle(err)
-		err = item.Value(func(val []byte) error {
-			block = Deserialize(val)
-			return err
-		})
-		return err
-	})
-	Handle(err)
-	iter.CurrentHash = block.PrevHash
-
-	return block
 }
 
 // FindUTXO finds the unspent transaction output
