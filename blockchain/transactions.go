@@ -48,6 +48,17 @@ func (tx Transaction) Serialize() []byte {
 	return encoded.Bytes()
 }
 
+// DeserializeTransaction deserializes bytes to Transaction
+func DeserializeTransaction(data []byte) Transaction {
+	var transaction Transaction
+
+	dec := gob.NewDecoder(bytes.NewReader(data))
+	err := dec.Decode(&transaction)
+	Handle(err)
+
+	return transaction
+}
+
 // CoinbaseTx : firsttx in the block. Miner collects the block reward.
 func CoinbaseTx(to, data string) *Transaction {
 	if data == "" {
