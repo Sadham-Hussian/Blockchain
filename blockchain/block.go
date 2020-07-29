@@ -4,14 +4,17 @@ import (
 	"bytes"
 	"encoding/gob"
 	"log"
+	"time"
 )
 
 // Block : struct to define a block
 type Block struct {
+	Timestamp    int64          // Time block created
 	Hash         []byte         // Hash of the block
 	Transactions []*Transaction // Transactions in the block
 	PrevHash     []byte         // Hash of the previous block
 	Nonce        int            // a number to be found to find the Hash of the block
+	Height       int            // Height of the blockchain
 }
 
 // HashTransactions : Function to hash all the transaction in the block
@@ -28,8 +31,8 @@ func (b *Block) HashTransactions() []byte {
 }
 
 // CreateBlock : method to create a new block
-func CreateBlock(txs []*Transaction, PrevHash []byte) *Block {
-	block := &Block{[]byte{}, txs, PrevHash, 0}
+func CreateBlock(txs []*Transaction, PrevHash []byte, height int) *Block {
+	block := &Block{time.Now().Unix(), []byte{}, txs, PrevHash, 0, height}
 	pow := NewProof(block)
 	nonce, hash := pow.Run()
 	block.Nonce = nonce
@@ -40,7 +43,7 @@ func CreateBlock(txs []*Transaction, PrevHash []byte) *Block {
 // Genesis : method to create the genesis block.
 // genesis block does not have PrevHash
 func Genesis(coinbase *Transaction) *Block {
-	return CreateBlock([]*Transaction{coinbase}, []byte{})
+	return CreateBlock([]*Transaction{coinbase}, []byte{}, 0)
 }
 
 // Serialize : method to serialize the entire block to bytes to store the

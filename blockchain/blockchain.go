@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	dbPath      = "./temp/blocks"
-	dbFile      = "./temp/blocks/MANIFEST"
+	dbPath      = "./temp/blocks_%s"
 	genesisData = "First Transaction from Genesis"
 )
 
@@ -26,8 +25,8 @@ type Blockchain struct {
 }
 
 // DBexists : function to check the status of the DB
-func DBexists() bool {
-	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+func DBexists(path string) bool {
+	if _, err := os.Stat(path + "/MANIFEST"); os.IsNotExist(err) {
 		return false
 	}
 
