@@ -107,6 +107,47 @@ func InitBlockchain(address, nodeID string) *Blockchain {
 	return &blockchain
 }
 
+// AddBlock : method to add new block to the Blockchain
+func (chain *Blockchain) AddBlock(block *Block) {
+	err := chain.Database.Update(func(txn *badger.Txn) error {
+		if _, err := txn.Get(block.Hash); err == nil {
+			return nil
+		}
+
+		blockData := block.Serialize()
+		err := txn.Set(block.Hash, blockData)
+		Handle(err)
+
+		item, err := txn.Get([]byte("lh"))
+		Handle(err)
+
+		var lastHash []byte
+		err = item.Value(func(val []byte) error {
+			lastHash = val
+			return err
+		})
+		Handle(err)
+		item, err = txn.Get(lastHash)
+		Handle(err)
+
+		var lastBlockData []byte
+
+		err = item.Value(func(val []byte) error {
+			lastBlockData = val
+		})
+
+		lastBlock := Deserialize(lastBlockData)
+
+		if block.Height > lastBlock.Height {
+			err = txn.Set([]byte("lh"), block.Hash)
+			Handle(err)
+			chain.LastHash = block.Hash
+		}
+		return nil
+	})
+	Handle(err)
+}
+
 // MineBlock : method to Mine a new block in the Blockchain
 func (chain *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
