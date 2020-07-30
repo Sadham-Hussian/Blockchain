@@ -36,9 +36,10 @@ func DBexists(path string) bool {
 }
 
 // ContinueBlockchain : method to retrieve the blockchain from the database
-func ContinueBlockchain(address string) *Blockchain {
-	if DBexists() == false {
-		fmt.Println("Blockchain do not exists")
+func ContinueBlockchain(nodeID string) *Blockchain {
+	path := fmt.Sprintf(dbPath, nodeID)
+	if DBexists(path) == false {
+		fmt.Println("No existing Blockchain..create one.")
 		runtime.Goexit()
 	}
 
@@ -48,7 +49,7 @@ func ContinueBlockchain(address string) *Blockchain {
 	opts.Dir = dbPath
 	opts.ValueDir = dbPath
 
-	db, err := badger.Open(opts)
+	db, err := openDB(path, opts)
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
@@ -69,9 +70,9 @@ func ContinueBlockchain(address string) *Blockchain {
 }
 
 // InitBlockchain : method to create a Blockchain
-func InitBlockchain(address string) *Blockchain {
-
-	if DBexists() {
+func InitBlockchain(address, nodeID string) *Blockchain {
+	path := fmt.Sprintf(dbPath, nodeID)
+	if DBexists(path) {
 		fmt.Println("Blockchain already exists")
 		runtime.Goexit()
 	}
@@ -82,7 +83,7 @@ func InitBlockchain(address string) *Blockchain {
 	opts.Dir = dbPath
 	opts.ValueDir = dbPath
 
-	db, err := badger.Open(opts)
+	db, err := openDB(path, opts)
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
