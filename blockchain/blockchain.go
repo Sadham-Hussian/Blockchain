@@ -107,9 +107,10 @@ func InitBlockchain(address, nodeID string) *Blockchain {
 	return &blockchain
 }
 
-// AddBlock : method to add new block to the chain
-func (chain *Blockchain) AddBlock(transactions []*Transaction) *Block {
+// MineBlock : method to Mine a new block in the Blockchain
+func (chain *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
+	var lastHeight int
 
 	for _, tx := range transactions {
 		if chain.VerifyTransaction(tx) != true {
@@ -123,11 +124,21 @@ func (chain *Blockchain) AddBlock(transactions []*Transaction) *Block {
 			lastHash = val
 			return err
 		})
+		Handle(err)
+
+		item, err = txn.Get(lastHash)
+		Handle(err)
+		err = item.Value(func(val []byte) error {
+			lastBlockData := val
+			lastBlock := Deserialize(lastBlockData)
+			lastHeight = lastBlock.Height
+			return err
+		})
 		return err
 	})
 	Handle(err)
 
-	newBlock := CreateBlock(transactions, lastHash)
+	newBlock := CreateBlock(transactions, lastHash, lastHeight+1)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
 		err := txn.Set(newBlock.Hash, newBlock.Serialize())
