@@ -173,6 +173,25 @@ func (chain *Blockchain) GetBlock(blockHash []byte) (Block, error) {
 	return block, nil
 }
 
+// GetBlockHashes method to retrieve all block hashes from the blockchain
+func (chain *Blockchain) GetBlockHashes() [][]byte {
+	var blocks [][]byte
+
+	iter := chain.Iterator()
+
+	for {
+		block := iter.Next()
+
+		blocks = append(blocks, block.Hash)
+
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+
+	return blocks
+}
+
 // MineBlock : method to Mine a new block in the Blockchain
 func (chain *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
