@@ -134,7 +134,9 @@ func (chain *Blockchain) AddBlock(block *Block) {
 
 		err = item.Value(func(val []byte) error {
 			lastBlockData = val
+			return err
 		})
+		Handle(err)
 
 		lastBlock := Deserialize(lastBlockData)
 
@@ -146,6 +148,29 @@ func (chain *Blockchain) AddBlock(block *Block) {
 		return nil
 	})
 	Handle(err)
+}
+
+// GetBlock method retrieves block using blockhash from the database
+func (chain *Blockchain) GetBlock(blockHash []byte) (Block, error) {
+	var block Block
+
+	err := chain.Database.View(func(txn *badger.Txn) error {
+		if item, err := txn.Get(blockHash); err != nil {
+			return errors.New("Block is not found")
+		} else {
+			err = item.Value(func(val []byte) error {
+				blockData := val
+				block = *Deserialize(blockData)
+				return nil
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		return block, err
+	}
+
+	return block, nil
 }
 
 // MineBlock : method to Mine a new block in the Blockchain
