@@ -192,6 +192,36 @@ func (chain *Blockchain) GetBlockHashes() [][]byte {
 	return blocks
 }
 
+// GetBestHeight method returns the current Height of the Blockchain
+func (chain *Blockchain) GetBestHeight() int {
+	var lastBlock Block
+
+	err := chain.Database.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("lh"))
+		Handle(err)
+		var lastHash []byte
+
+		err = item.Value(func(val []byte) error {
+			lastHash = val
+			return nil
+		})
+		Handle(err)
+
+		item, err = txn.Get(lastHash)
+		Handle(err)
+
+		err = item.Value(func(val []byte) error {
+			lastBlockData := val
+			lastBlock = *Deserialize(lastBlockData)
+			return nil
+		})
+		return err
+	})
+	Handle(err)
+
+	return lastBlock.Height
+}
+
 // MineBlock : method to Mine a new block in the Blockchain
 func (chain *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
