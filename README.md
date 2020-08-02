@@ -5,9 +5,9 @@ Blockchain implemented in Go which replicates the Bitcoin Blockchain. It is an o
 ## Instructions to run
 
 1. Clone this repo
-```
-git clone https://github.com/Sadham-Hussian/Blockchain.git
-```
+    ```
+    git clone https://github.com/Sadham-Hussian/Blockchain.git
+    ```
 2. Set environment variable
 
     - In windows
