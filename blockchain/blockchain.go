@@ -45,9 +45,9 @@ func ContinueBlockchain(nodeID string) *Blockchain {
 
 	var lastHash []byte
 
-	opts := badger.DefaultOptions(dbPath)
-	opts.Dir = dbPath
-	opts.ValueDir = dbPath
+	opts := badger.DefaultOptions(path)
+	opts.Dir = path
+	opts.ValueDir = path
 
 	db, err := openDB(path, opts)
 	Handle(err)
@@ -79,9 +79,9 @@ func InitBlockchain(address, nodeID string) *Blockchain {
 
 	var lastHash []byte
 
-	opts := badger.DefaultOptions(dbPath)
-	opts.Dir = dbPath
-	opts.ValueDir = dbPath
+	opts := badger.DefaultOptions(path)
+	opts.Dir = path
+	opts.ValueDir = path
 
 	db, err := openDB(path, opts)
 	Handle(err)
@@ -342,7 +342,6 @@ func (chain *Blockchain) SignTransaction(tx *Transaction, privateKey ecdsa.Priva
 		Handle(err)
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
-
 	tx.Sign(privateKey, prevTXs)
 }
 

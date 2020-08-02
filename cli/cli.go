@@ -21,7 +21,7 @@ func (cli *CommandLine) printUsage() {
 	fmt.Println("Usage: ")
 	fmt.Println(" getBalance -address ADDRESS -get the balance for an address")
 	fmt.Println(" CreateBlockchain -address ADDRESS creates a blockchain and sends genesis reward to address")
-	fmt.Println(" send -to TO -from FROM -amount AMOUNT -mine - Send amount of coins. Then -mine flag is set, mine off this node")
+	fmt.Println(" send -from FROM -to TO -amount AMOUNT -mine - Send amount of coins. Then -mine flag is set, mine off this node")
 	fmt.Println(" print - prints the blocks in the chain")
 	fmt.Println(" createwallet - Creates a new wallet")
 	fmt.Println(" listaddresses - Lists all the addresses in our wallet file")
@@ -101,20 +101,19 @@ func (cli *CommandLine) printChain(nodeID string) {
 	}
 }
 
-func (cli *CommandLine) createBlockchain(nodeID, address string) {
+func (cli *CommandLine) createBlockchain(address, nodeID string) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("Address is not valid")
 	}
 	chain := blockchain.InitBlockchain(address, nodeID)
 	chain.Database.Close()
-
 	UTXOSet := blockchain.UTXOSet{BChain: chain}
 	UTXOSet.Reindex()
 
 	fmt.Println("Finished!")
 }
 
-func (cli *CommandLine) getBalance(nodeID, address string) {
+func (cli *CommandLine) getBalance(address, nodeID string) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("Address is not valid")
 	}
@@ -134,7 +133,7 @@ func (cli *CommandLine) getBalance(nodeID, address string) {
 	fmt.Printf("Balance of %s is %d", address, balance)
 }
 
-func (cli *CommandLine) send(from, to, nodeID string, amount int, mineNow bool) {
+func (cli *CommandLine) send(from, to string, amount int, nodeID string, mineNow bool) {
 	if !wallet.ValidateAddress(from) {
 		log.Panic("From Address is not valid")
 	}
@@ -151,21 +150,17 @@ func (cli *CommandLine) send(from, to, nodeID string, amount int, mineNow bool) 
 	}
 	wallet := wallets.GetWallet(from)
 
-	tx := blockchain.NewTransaction(&wallet, to, amount, &UTXOSet)
+	tx := blockchain.NewTransaction(&wallet, to, amount, &UTXO)
 	if mineNow {
 		cbTx := blockchain.CoinbaseTx(from, "")
-		txs := []*blockchain.Transaction(cbTx, tx)
+		txs := []*blockchain.Transaction{cbTx, tx}
 		block := chain.MineBlock(txs)
-		UTXOSet.Update(block)
+		UTXO.Update(block)
 	} else {
-		network.SendTx(network.knownNodes[0], tx)
+		network.SendTx(network.KnownNodes[0], tx)
 		fmt.Println("send tx")
 	}
 
-	tx := blockchain.NewTransaction(from, to, amount, &UTXO)
-	cbtx := blockchain.CoinbaseTx(from, "")
-	block := chain.AddBlock([]*blockchain.Transaction{cbtx, tx})
-	UTXO.Update(block)
 	fmt.Println("Success!")
 }
 
@@ -275,7 +270,7 @@ func (cli *CommandLine) Run() {
 	}
 
 	if sendCmd.Parsed() {
-		if *sendFrom == "" || *sendTo == "" || *sendAmount == 0 {
+		if *sendFrom == "" || *sendTo == "" || *sendAmount <= 0 {
 			sendCmd.Usage()
 			runtime.Goexit()
 		}
